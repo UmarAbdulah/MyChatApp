@@ -8,15 +8,20 @@ const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
-  const { sendMessage, selectedUser, isEditingMessage, editMessage } =
-    useChatStore();
+  const {
+    sendMessage,
+    selectedUser,
+    isEditingMessage,
+    editMessage,
+    setIsEditingMessage,
+  } = useChatStore();
 
   useEffect(() => {
     setText("");
   }, [selectedUser._id]);
 
   useEffect(() => {
-    if (editMessage) {
+    if (isEditingMessage) {
       setText(editMessage);
     }
   }, [isEditingMessage]);
@@ -40,6 +45,11 @@ const MessageInput = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = null;
     }
+  };
+
+  const stopEditHandler = () => {
+    setText("");
+    setIsEditingMessage();
   };
 
   const handleSendMessage = async (event) => {
@@ -75,19 +85,6 @@ const MessageInput = () => {
           </div>
         </div>
       )}
-      {isEditingMessage && (
-        <div className="mb-3 flex items-center gap-2">
-          <div className="relative w-185 h-10 bg-gray-500">
-            <button
-              onClick={removeImage}
-              className="absolute -top-1.5 -right-1.5 size-5 rounded-full bg-base-300 flex items-center justify-center cursor-pointer"
-              type="button"
-            >
-              <X className="size-3" />
-            </button>
-          </div>
-        </div>
-      )}
 
       <form onSubmit={handleSendMessage} className="flex items-center gap-2">
         <div className="flex-1 flex gap-2">
@@ -97,22 +94,35 @@ const MessageInput = () => {
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            ref={fileInputRef}
-            onChange={handleImageChange}
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className={`hidden sm:flex btn btn-circle ${
-              imagePreview ? "text-emerald-500" : "text-zinc-400"
-            }`}
-          >
-            <Image size={20} />
-          </button>
+          {isEditingMessage && (
+            <button
+              type="button"
+              onClick={stopEditHandler}
+              className="btn btn-circle"
+            >
+              <X size={20} />
+            </button>
+          )}
+          {!isEditingMessage && (
+            <>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                ref={fileInputRef}
+                onChange={handleImageChange}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className={`hidden sm:flex btn btn-circle ${
+                  imagePreview ? "text-emerald-500" : "text-zinc-400"
+                }`}
+              >
+                <Image size={20} />
+              </button>
+            </>
+          )}
           <button
             type="submit"
             className="btn btn-circle "

@@ -17,7 +17,7 @@ const ChatContainer = () => {
     isDeletingMessage,
     findMessage,
   } = useChatStore();
-  const [editMessage, setEditMessage] = useState(null);
+  // const [editMessage, setEditMessage] = useState(null);
   const { authUser } = useAuthStore();
   const chatRef = useRef(null);
 

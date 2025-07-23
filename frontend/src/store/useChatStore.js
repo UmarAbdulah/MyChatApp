@@ -12,6 +12,10 @@ export const useChatStore = create((set,get)=>({
     isEditingMessage : false,
     editMessage : null ,
 
+    setIsEditingMessage :  () => {
+        set({isEditingMessage : false})
+    },
+
     getUsers : async () => {
         set({isUsersLoading : true})
         try{
