@@ -37,18 +37,20 @@ export const getMessages = async (req, res) => {
 }
 
 export const sendMessage = async(req,res) =>{
-    const {text, img} = req.body;
+    const {text, image} = req.body;
     const receiverId = req.params.id;
     const senderId = req.user._id;
     let imageUrl;
-    if (img) {
-        const  uploadResponse = await cloudinary.uploader.upload(img);
+
+    if (image) {
+        const  uploadResponse = await cloudinary.uploader.upload(image);
         imageUrl = uploadResponse.secure_url;
     }
 
     if (!receiverId) {
         return res.status(400).json({ message: "Receiver ID is required" });
     }
+
 
     try {
         const newMessage = await Message.create({
@@ -62,7 +64,46 @@ export const sendMessage = async(req,res) =>{
 
         res.status(201).json(newMessage);
     } catch (error) {
-        console.error("Error sending message:", error);
         res.status(500).json({ message: "Server side error occurred" });
     }
+}
+
+
+export const deleteMessage = async(req,res) => {
+    const messageId = req.params.id;
+    const loggedInUserId = req.user._id;
+    try{
+        const message = await Message.findById(messageId);
+        if (!message) {
+            return res.status(404).json({ message: "Message not found" });
+        }
+        if (message.senderId.toString() !== loggedInUserId.toString()) {
+            return res.status(403).json({ message: "You are not authorized to delete this message" });
+        }
+        await Message.findByIdAndDelete(messageId);
+        res.status(200).json({ message: "Message deleted successfully" });
+    }
+    catch(error){
+        res.status(500).json({message : "Server side error occurred"})
+    }
+
+}
+
+export const findMessage = async (req ,res ) => {
+    const messageId = req.params.id;
+    const loggedInUserId = req.user._id;
+    try{
+         const message = await Message.findById(messageId);
+         if (!message) {
+             return res.status(404).json({ message: "Message not found" });
+         }
+        if (message.senderId.toString() !== loggedInUserId.toString()) {
+            return res.status(403).json({ message: "You are not authorized to delete this message" });
+        }
+        res.status(200).json(message);
+    }
+    catch(error){
+        res.status(500).json({message : "Server side error occurred"})
+    }
+
 }

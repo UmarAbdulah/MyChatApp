@@ -32,14 +32,11 @@ export const signup = async (req, res) => {
         });
 
         if (newUser){
-            generateToken(newUser._id , res);
             await newUser.save();
             res.status(201).json({
                 _id : newUser._id,
                 name: newUser.name,
                 email: newUser.email,
-                profilePic: user.profilePic,
-
             })
         }
         else{
@@ -55,7 +52,6 @@ export const signup = async (req, res) => {
 
 export const login = async (req, res) => {
 
-    console.log(req.body)
     const {email , password} = req.body;
     if (!email || !password) {
         return res.status(400).json({ message: "Please fill all the fields" });
@@ -78,7 +74,6 @@ export const login = async (req, res) => {
             _id: user._id,
             name: user.name,
             email: user.email,
-            profilePic: user.profilePic,
         });
     }
     catch(error){
@@ -112,6 +107,8 @@ export const updateProfile = async (req, res) => {
             { profilePic: response.secure_url },
             { new: true }
         );
+        console.log(updatedUser)
+    
         if (!updatedUser) {
             return res.status(404).json({ message: "User not found" });
         }
