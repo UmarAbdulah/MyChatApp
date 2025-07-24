@@ -1,6 +1,6 @@
 import express from 'express';
 import { protectRoute } from '../middlewares/auth.middleware.js';
-import {getUsersForSideBar,getMessages,sendMessage,deleteMessage,findMessage} from '../controllers/message.controllers.js'
+import {getUsersForSideBar,getMessages,sendMessage,deleteMessage,findMessage,editMessage} from '../controllers/message.controllers.js'
 
 const router = express.Router();
 
@@ -9,5 +9,6 @@ router.get("/findMessage/:id", protectRoute, findMessage)
 router.get("/:id",protectRoute,getMessages);
 router.post("/send/:id",protectRoute,sendMessage)
 router.delete("/delete/:id",protectRoute,deleteMessage)
+router.put("/message/edit/:id",protectRoute,editMessage)
 
 export default router;

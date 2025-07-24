@@ -14,6 +14,7 @@ const MessageInput = () => {
     isEditingMessage,
     editMessage,
     setIsEditingMessage,
+    editMessageHandler,
   } = useChatStore();
 
   useEffect(() => {
@@ -56,7 +57,12 @@ const MessageInput = () => {
     event.preventDefault();
     if (!text.trim() && !imagePreview) return;
     try {
-      await sendMessage({ text: text.trim(), image: imagePreview });
+      if (isEditingMessage) {
+        await editMessageHandler(text);
+        setIsEditingMessage();
+      } else {
+        await sendMessage({ text: text.trim(), image: imagePreview });
+      }
     } catch (error) {
       console.log(error);
     } finally {

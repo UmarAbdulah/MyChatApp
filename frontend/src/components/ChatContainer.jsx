@@ -16,8 +16,10 @@ const ChatContainer = () => {
     deleteMessage,
     isDeletingMessage,
     findMessage,
+    setEditMessage,
+    isEditingMessage,
   } = useChatStore();
-  // const [editMessage, setEditMessage] = useState(null);
+
   const { authUser } = useAuthStore();
   const chatRef = useRef(null);
 
@@ -25,7 +27,7 @@ const ChatContainer = () => {
     if (selectedUser?._id) {
       getMessages(selectedUser._id);
     }
-  }, [selectedUser?._id, getMessages, isDeletingMessage]);
+  }, [selectedUser?._id, getMessages, isDeletingMessage, isEditingMessage]);
 
   useEffect(() => {
     if (chatRef.current) {
@@ -39,6 +41,7 @@ const ChatContainer = () => {
 
   const editMessageHandler = async (id) => {
     await findMessage(id);
+    setEditMessage(id);
   };
 
   if (isMessageLoading) {
@@ -95,13 +98,15 @@ const ChatContainer = () => {
                           deleteMessageHandler(message._id);
                         }}
                       />
-                      <Pencil
-                        size={25}
-                        className="p-1 cursor-pointer hover:opacity-50"
-                        onClick={() => {
-                          editMessageHandler(message._id);
-                        }}
-                      />
+                      {!message.image && (
+                        <Pencil
+                          size={25}
+                          className="p-1 cursor-pointer hover:opacity-50"
+                          onClick={() => {
+                            editMessageHandler(message._id);
+                          }}
+                        />
+                      )}
                     </div>
                   )}
                 </div>

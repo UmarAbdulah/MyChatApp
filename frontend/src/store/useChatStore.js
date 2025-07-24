@@ -11,9 +11,14 @@ export const useChatStore = create((set,get)=>({
     isDeletingMessage : false,
     isEditingMessage : false,
     editMessage : null ,
+    editMessageId : null ,
 
     setIsEditingMessage :  () => {
         set({isEditingMessage : false})
+    },
+
+    setEditMessage :  (value) => {
+        set({editMessageId : value})
     },
 
     getUsers : async () => {
@@ -109,10 +114,27 @@ export const useChatStore = create((set,get)=>({
         }
     },
 
+    editMessageHandler : async (text) => {
+        const {editMessageId} = get();
+        try{
+            const response = await axiosInstance.put(`/messages/message/edit/${editMessageId}`,{text:text})
+            if (response.status === 200){
+                toast.success("Message Edited Successfully")
+            }
+            else {
+                throw new Error("Failed to edit message")
+            }
+        }
+        catch(error){
+            toast.error("Failed to edit Message")
+        }
+        finally{
+            set({isEditingMessage : false})
+        }
+
+    },
+
     setSelectedUser : (selectedUser) => {
         set({selectedUser : selectedUser})
     },
-
-
-
 }))

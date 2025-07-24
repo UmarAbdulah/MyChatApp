@@ -107,3 +107,24 @@ export const findMessage = async (req ,res ) => {
     }
 
 }
+
+export const editMessage = async (req,res) => {
+    const id = req.params.id;
+    const {text} = req.body;
+    const loggedInUserId = req.user._id;
+    try{
+        const message = await Message.findById(id);
+        if (!message) {
+            return res.status(404).json({ message: "Message not found" });
+        }
+        if (message.senderId.toString() !== loggedInUserId.toString()) {
+            return res.status(403).json({ message: "You are not authorized to delete this message" });
+        }
+        const response = await Message.findByIdAndUpdate(id, {text}, {new : true});
+        res.status(200).json(response);
+    }
+    catch(error){
+        throw new Error("Server side error")
+    }
+}
+
