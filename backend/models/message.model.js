@@ -17,6 +17,15 @@ const messageSchema = new mongoose.Schema({
     image:{
         type: String,
     },
+    isEdited : {
+        type: Boolean,
+        default: false
+    },
+    reactions: {
+        type: Map,
+        of: String,
+        default: {},
+  },
 
 },
 {

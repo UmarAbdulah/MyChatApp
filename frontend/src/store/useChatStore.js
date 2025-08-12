@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
+import { useAuthStore } from "./useAuth.store";
 
 export const useChatStore = create((set,get)=>({
     messages : [],
@@ -12,6 +13,7 @@ export const useChatStore = create((set,get)=>({
     isEditingMessage : false,
     editMessage : null ,
     editMessageId : null ,
+    typingUser : null,
 
     setIsEditingMessage :  () => {
         set({isEditingMessage : false})
@@ -137,4 +139,105 @@ export const useChatStore = create((set,get)=>({
     setSelectedUser : (selectedUser) => {
         set({selectedUser : selectedUser})
     },
+
+    subscribeToMessages : () => {
+        const {selectedUser} = get();
+        if (!selectedUser){
+            return ;
+        }
+        
+        const socket = useAuthStore.getState().socket;
+        socket.on("newMessage",(newMessage)=>{
+                if (newMessage.senderId !== selectedUser._id){
+                    return;
+                }
+                set({messages : [...get().messages, newMessage]})
+            
+        })
+    },
+
+    unsubscribeToMessages : () => {
+        const socket = useAuthStore.getState().socket;
+        socket.off("newMessage");
+    },
+
+    deleteMessageinRealTime : () => {
+        const socket = useAuthStore.getState().socket;
+        socket.on("messageDeleted",(messageId)=>{
+            set((state) => ({
+                messages: state.messages.filter((message) => message._id !== messageId),
+            }));
+        })
+    },
+
+    editMessageinRealTime : () => {
+        const socket = useAuthStore.getState().socket;
+        socket.on("messageEdited",(editedMessage)=>{
+            set((state) => ({
+                messages: state.messages.map((message) =>
+                    message._id === editedMessage._id ? editedMessage : message
+                ),
+            }));
+        })
+    },
+    
+    reactToMessage : async (messageId, reaction) => {
+        try{
+            const response = await axiosInstance.put(`/messages/message/react/${messageId}`, {reaction});
+            if (response.status !== 200){
+                throw new Error("Failed to react to message")
+            }
+        }
+        catch(error){
+            toast.error("Failed to react to message")
+        }
+    },
+
+    reactToMessagesInRealTime: () => {
+        const socket = useAuthStore.getState().socket;
+        socket.on("messageReacted", (updatedMessage) => {
+            set((state) => ({
+                messages: state.messages.map((msg) =>
+                    msg._id === updatedMessage._id ? updatedMessage : msg
+                )
+            }));
+        });
+    },
+
+    userisTyping : () => {
+        const socket = useAuthStore.getState().socket;
+        const user = useAuthStore.getState().authUser;
+        const {selectedUser} = get();
+        socket.emit("userIsTyping", { conversationId: selectedUser._id, userId : user._id,username : user.name});
+    },
+
+    userStopTyping : (userId) => {
+        const socket = useAuthStore.getState().socket;
+        const user = useAuthStore.getState().authUser;
+
+        const {selectedUser} = get();
+        socket.emit("userStoppedTyping", {
+                  conversationId: selectedUser._id,
+                  userId: user._id,
+                  username : user.name
+                });
+    },
+
+    listeningToUserTyping : () => { 
+        const socket = useAuthStore.getState().socket;
+        const {selectedUser} = get();
+        socket.on("typing",(username)=>{
+            if (selectedUser.name === username ){
+                set({ typingUser: username })
+            }
+        })
+    },
+
+    listeningToUserStopTyping  : () => {
+        const socket = useAuthStore.getState().socket;
+        socket.on("stopTyping",()=>{
+            set({ typingUser: null })
+        })
+    }
+
 }))

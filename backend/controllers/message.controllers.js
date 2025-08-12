@@ -1,6 +1,8 @@
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 import cloudinary from "../lib/cloudinary.js";
+import { io } from "../lib/socket.js";
+import { getReceiverSocketId } from "../lib/socket.js";
 
 export const getUsersForSideBar =async (req,res) =>{
     try{
@@ -60,14 +62,16 @@ export const sendMessage = async(req,res) =>{
             image : imageUrl
         });
 
-        //todo
+        const receiveSocketId = await getReceiverSocketId(receiverId);
+        if(receiveSocketId){
+            io.to(receiveSocketId).emit("newMessage", newMessage);
+        }
 
         res.status(201).json(newMessage);
     } catch (error) {
         res.status(500).json({ message: "Server side error occurred" });
     }
 }
-
 
 export const deleteMessage = async(req,res) => {
     const messageId = req.params.id;
@@ -81,6 +85,10 @@ export const deleteMessage = async(req,res) => {
             return res.status(403).json({ message: "You are not authorized to delete this message" });
         }
         await Message.findByIdAndDelete(messageId);
+        const userSocketId = await getReceiverSocketId(message.receiverId);
+        if(userSocketId){
+            io.to(userSocketId).emit("messageDeleted", messageId);
+        }
         res.status(200).json({ message: "Message deleted successfully" });
     }
     catch(error){
@@ -120,7 +128,14 @@ export const editMessage = async (req,res) => {
         if (message.senderId.toString() !== loggedInUserId.toString()) {
             return res.status(403).json({ message: "You are not authorized to delete this message" });
         }
-        const response = await Message.findByIdAndUpdate(id, {text}, {new : true});
+        if (message.isEdited === true) {
+            return res.status(403).json({ message: "You can't edit this message" });
+        }
+        const response = await Message.findByIdAndUpdate(id, {text,isEdited : true}, {new : true});
+        const userSocketId = await getReceiverSocketId(message.receiverId);
+        if(userSocketId){
+            io.to(userSocketId).emit("messageEdited", response);
+        }
         res.status(200).json(response);
     }
     catch(error){
@@ -128,3 +143,23 @@ export const editMessage = async (req,res) => {
     }
 }
 
+export const reactToMessage = async(req ,res ) => {
+    const messageId = req.params.id;
+    const {reaction} = req.body;
+    const loggedInUserId = req.user._id;
+    try{
+        const message = await Message.findById(messageId);
+        if (!message) {
+            return res.status(404).json({ message: "Message not found" });
+        }
+        const response = await Message.findByIdAndUpdate(messageId, { [`reactions.${loggedInUserId}`]: reaction}, {new : true});
+        const userSocketId = await getReceiverSocketId(message.receiverId);
+        if(userSocketId){
+            io.to(userSocketId).emit("messageReacted", response);
+        }
+        res.status(200).json(response);
+    }
+    catch(error){
+        res.status(500).json({message : "Server side error occurred"})
+    }
+}

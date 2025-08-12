@@ -7,6 +7,8 @@ import toast from "react-hot-toast";
 const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
+  const [typingTimeout, setTypingTimeout] = useState(null);
+
   const fileInputRef = useRef(null);
   const {
     sendMessage,
@@ -15,6 +17,8 @@ const MessageInput = () => {
     editMessage,
     setIsEditingMessage,
     editMessageHandler,
+    userisTyping,
+    userStopTyping,
   } = useChatStore();
 
   useEffect(() => {
@@ -98,7 +102,16 @@ const MessageInput = () => {
             type="text"
             className="w-full input input-bordered rounded-lg input-sm sm:input-md"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              userisTyping();
+              if (typingTimeout) clearTimeout(typingTimeout);
+              const timeout = setTimeout(() => {
+                userStopTyping();
+              }, 1000);
+
+              setTypingTimeout(timeout);
+              setText(e.target.value);
+            }}
           />
           {isEditingMessage && (
             <button

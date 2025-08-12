@@ -21,7 +21,7 @@ const App = () => {
       await checkAuth();
     };
     handleAuth();
-  }, [logedIn]);
+  }, []);
 
   if (!authUser && isCheckingAuth) {
     return (
@@ -30,6 +30,7 @@ const App = () => {
       </div>
     );
   }
+
   return (
     <div>
       <NavBar />
@@ -38,8 +39,14 @@ const App = () => {
           path="/"
           element={authUser ? <HomePage /> : <Navigate to="/login" />}
         />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/signup"
+          element={authUser ? <Navigate to="/" /> : <SignUpPage />}
+        />
+        <Route
+          path="/login"
+          element={authUser ? <Navigate to="/" /> : <LoginPage />}
+        />
         <Route
           path="/profile"
           element={
