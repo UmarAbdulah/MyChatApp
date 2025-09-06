@@ -45,7 +45,6 @@ export const signup = async (req, res) => {
 
     }
     catch(error){
-        console.log("Error" , error);
         res.status(500).json("Server side error occurred");
     }
 }
@@ -77,7 +76,6 @@ export const login = async (req, res) => {
         });
     }
     catch(error){
-        console.log("Error", error);
         res.status(500).json("Server side error occurred");
     }
 }
@@ -88,7 +86,6 @@ export const logout = (req, res) => {
         res.status(200).json("User logged out successfully");
     }
     catch(error){
-        console.log("Error", error);
         res.status(500).json("Server side error occurred");
     }
 
@@ -107,7 +104,6 @@ export const updateProfile = async (req, res) => {
             { profilePic: response.secure_url },
             { new: true }
         );
-        console.log(updatedUser)
     
         if (!updatedUser) {
             return res.status(404).json({ message: "User not found" });
@@ -117,7 +113,6 @@ export const updateProfile = async (req, res) => {
         });
     }
     catch(error){
-        console.log("Error", error);
         res.status(500).json("Server side error occurred");
     }
 }
@@ -126,7 +121,6 @@ export const checkAuth = (req, res) => {
     try{
         res.status(200).json(req.user);
     }catch(error){
-        console.log("Error in checkAuth Controller", error);
         res.status(500).json("Server side error occurred");
     }
 }

@@ -23,7 +23,6 @@ export function getReceiverSocketId(userId){
 }
 
 io.on("connection",(socket)=>{
-    console.log("User Connected",socket.id)
 
     const userId = socket.handshake.query.userId
 
@@ -37,14 +36,54 @@ io.on("connection",(socket)=>{
         const userSocketId = getReceiverSocketId(conversationId);
         io.to(userSocketId).emit("typing",username );
     });
+
     socket.on("userStoppedTyping", ({ conversationId, userId,username }) => {
         const userSocketId = getReceiverSocketId(conversationId);
         io.to(userSocketId).emit("stopTyping");
     });
 
+    socket.on(
+    "callToUser",(data)=>{
+        const receiver  = Object.keys(userSocketMap).find(key => key === data.calltoUserId);
+        if (!receiver){
+            socket.emit("offlineUser") 
+            return;
+        }
+        io.to(userSocketMap[receiver]).emit("calltoUser",{
+            signal : data.signalData,
+            from : data.from,
+            name : data.name,
+            email: data.email,
+            profilePic : data.profilePic
+        })
+    }
+    )
+
+    socket.on("callRejected",(data)=>{
+        io.to(data.to).emit("callRejected",{
+            name : data.name ,
+            email : data.email,
+            profilePic : data.profilePic
+        })
+    })
+
+
+    socket.on("answeredCall",(data)=>{
+
+        io.to(data.to).emit("callAccepted",{
+            signal : data.signal,
+            from : data.from,
+        })
+    })
+
+    socket.on("callEnded",(data)=>{
+
+        io.to(data.to).emit("callEnded",{
+            name : data.name
+        });
+    })
 
     socket.on("disconnect",()=>{
-        console.log("User disconneted",socket.id)
         delete userSocketMap[userId];
         io.emit("getOnlineUsers", Object.keys(userSocketMap));
     })

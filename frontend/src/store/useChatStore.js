@@ -2,6 +2,7 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "./useAuth.store";
+import { data } from "react-router-dom";
 
 export const useChatStore = create((set,get)=>({
     messages : [],
@@ -14,6 +15,16 @@ export const useChatStore = create((set,get)=>({
     editMessage : null ,
     editMessageId : null ,
     typingUser : null,
+    userIsOffline : true, 
+    recievingCall : false,
+    caller : null,
+    callerSignal : null,
+    showCallRejectedPopUp : false ,
+    callrejectedUser : null,
+    stream : null,
+    callEnded : null ,
+    callEndedByUser : null,
+
 
     setIsEditingMessage :  () => {
         set({isEditingMessage : false})
@@ -90,7 +101,6 @@ export const useChatStore = create((set,get)=>({
             }
         }
         catch(error){
-            console.log(error)
             toast.error("Something went wrong cannot delete message")
         }
         finally{
@@ -111,7 +121,6 @@ export const useChatStore = create((set,get)=>({
             }
         }
         catch(error){
-            console.log(error)
             toast.error(error.message);
         }
     },
@@ -238,6 +247,142 @@ export const useChatStore = create((set,get)=>({
         socket.on("stopTyping",()=>{
             set({ typingUser: null })
         })
+    },
+
+    videoCallService : (data) =>{
+        const socket = useAuthStore.getState().socket;
+        const {selectedUser} = get();
+        socket.emit("callToUser",{
+            calltoUserId : selectedUser._id,
+            signalData : data,
+            from : socket.id,
+            name : useAuthStore.getState().authUser.name,
+            email: useAuthStore.getState().authUser.email,
+            profilePic : useAuthStore.getState().authUser.profilePic
+        })
+    },
+
+    offlineUser : () => {
+        const socket = useAuthStore.getState().socket;
+        const {userIsOffline} = get();
+
+        socket.on("offlineUser",()=>{
+            toast.error("User is offline")
+            set({ userIsOffline: true })
+        })
+    },
+
+    callrecive: () => {
+    const socket = useAuthStore.getState().socket;
+
+    const handleCall = (data) => {
+      set({ userIsOffline: false });
+      set({ caller: data });
+      set({ callerSignal: data.signal });
+      set({ recivingCall: true });
+    };
+
+    socket.on("calltoUser", handleCall);
+    return () => socket.off("calltoUser", handleCall);
+  },    
+
+    callRejected: () => {
+        const socket = useAuthStore.getState().socket;
+        socket.emit("callRejected", {
+        to: get().caller.from,
+        name: useAuthStore.getState().authUser.name,
+        email: useAuthStore.getState().authUser.email,
+        profilePic: useAuthStore.getState().authUser.profilePic,
+        });
+    },
+
+  callRejectToUser: () => {
+    const socket = useAuthStore.getState().socket;
+    const handle = (data) => {
+      set({ showCallRejectedPopUp: true });
+      set({ callrejectedUser: data });
+    };
+    socket.on("callRejected", handle);
+    return () => socket.off("callRejected", handle);
+  },
+
+    answertheCall: (data) => {
+    const socket = useAuthStore.getState().socket;
+    socket.emit("answeredCall", {
+      signal: data,
+      from: socket.id,
+      to: get().caller.from,
+    });
+  },
+
+  // Accepts a callback to deliver the answer (for the caller to signal into peer)
+  callAcceptedByUser: (onAnswer) => {
+    const socket = useAuthStore.getState().socket;
+    const handler = (data) => {
+      // data: { signal, from }
+      set({ showCallRejectedPopUp: false });
+      set({ caller: data.from });
+      if (typeof onAnswer === "function") onAnswer(data);
+    };
+    socket.on("callAccepted", handler);
+    return () => socket.off("callAccepted", handler);
+  },
+
+  endCall: () => {
+    const socket = useAuthStore.getState().socket;
+    socket.emit("callEnded" , {
+        to  : get().caller,
+        name: useAuthStore.getState().authUser.name,
+    })
+    set({recivingCall:false})
+    
+  },
+
+  endCallByUser: (remoteVideo,myVideo,connectionRef,setDisplayVideo,setCallAccepted) => {
+    const socket = useAuthStore.getState().socket;
+    if (!socket) return;
+    set({callEnded : true})
+    socket.on("callEnded", () => {
+      set({
+        caller: null,
+        callerSignal: null,
+        stream: null,
+      });
+      set({recivingCall : false})
+    if (get().stream) {
+      get().stream.getTracks().forEach((track) => track.stop());
     }
+    if (remoteVideo.current) {
+      remoteVideo.current.srcObject = null;
+    }
+    if (myVideo.current) {
+      myVideo.current.srcObject = null;
+    }
+    connectionRef.current?.destroy();
+    if(setDisplayVideo){
+        setDisplayVideo(false);
+    }
+    setCallAccepted(false);
+    
+    });
+    
+  },
+
+//   endCallOnBothSides: (remoteVideo,myVideo)=>{
+//     if (get().stream) {
+//       get().stream.getTracks().forEach((track) => track.stop());
+//     }
+//     if (remoteVideo.current) {
+//       remoteVideo.current.srcObject = null;
+//     }
+//     if (myVideo.current) {
+//       myVideo.current.srcObject = null;
+//     }
+//     connectionRef.current?.destroy();
+//     useChatStore.setState({ stream: null });
+//     useChatStore.setState({ recievingCall: null });
+//     setCallAccepted(false);
+//   }
+
 
 }))

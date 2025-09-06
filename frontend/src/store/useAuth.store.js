@@ -78,7 +78,6 @@ export const useAuthStore = create((set,get) => ({
         }
         catch(error){
             toast.error(error?.response?.data?.message || "Login failed");
-            console.log(error)
             return {success : false }
         }
         finally{
@@ -94,7 +93,6 @@ export const useAuthStore = create((set,get) => ({
             get().disConnectSocket()
         }
         catch(error){
-            console.log("error in logout",error);
             toast.error("Error logging out");
         }
     },
