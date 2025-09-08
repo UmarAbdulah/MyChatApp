@@ -32,8 +32,8 @@ const ChatHeader = (props) => {
   } = useChatStore();
   const { onlineUsers } = useAuthStore();
   const [displayVideo, setDisplayVideo] = useState(false);
-  const [isMicOn, setisMicOn] = useState(true);
-  const [isCamOn, setisCamOn] = useState(true);
+  const [isMicOn] = useState(true);
+  const [isCamOn] = useState(true);
 
   // Attach local stream to my video for caller UI
   useEffect(() => {
@@ -50,8 +50,9 @@ const ChatHeader = (props) => {
 
   useEffect(() => {
     const cleanupReject = callRejectToUser();
-    return () => cleanupReject?.();
     endCallByUser();
+
+    return () => cleanupReject?.();
   }, [callRejectToUser, endCallByUser]);
 
   const stopMediaDevices = (s) => {
@@ -226,7 +227,6 @@ const ChatHeader = (props) => {
                 <button
                   type="button"
                   className="md:hidden text-2xl text-white cursor-pointer"
-                  onClick={() => setIsSidebarOpen(true)}
                 >
                   <FaBars />
                 </button>
