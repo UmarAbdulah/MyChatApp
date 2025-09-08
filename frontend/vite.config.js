@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(), 
-   ],
+  ],
   optimizeDeps: {
     esbuildOptions: {
       define: {
@@ -32,5 +32,8 @@ export default defineConfig({
   },
   define: {
     global: "window" // Critical fix for `global is not defined`
+  },
+  build: {
+    outDir: 'dist' // explicitly define output folder
   }
 });

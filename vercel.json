@@ -15,4 +15,3 @@
     { "src": "/(.*)", "dest": "/frontend/dist/$1" }
   ]
 }
-
